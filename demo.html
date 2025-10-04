@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ExpenMan - Expense Management</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body>
+    <div id="root"></div>
+    
+    <script type="text/babel">
+      const { useState, createContext, useContext } = React;
+
+      const AppContext = createContext();
+
+      const AppProvider = ({ children }) => {
+        const [user, setUser] = useState(null);
+        const [users, setUsers] = useState([]);
+        const [currentView, setCurrentView] = useState('home');
+
+        const login = (email, password, selectedRole) => {
+          const userWithSelectedRole = { 
+            name: email.split('@')[0], 
+            email: email, 
+            role: selectedRole,
+            id: Date.now().toString()
+          };
+          setUser(userWithSelectedRole);
+          setCurrentView('dashboard');
+        };
+
+        const logout = () => {
+          setUser(null);
+          setCurrentView('home');
+        };
+
+        const addUser = (userData) => {
+          const newUser = {
+            ...userData,
+            id: Date.now().toString(),
+            password: Math.random().toString(36).slice(-8),
+            createdAt: new Date().toISOString()
+          };
+          setUsers(prev => [...prev, newUser]);
+          return newUser;
+        };
+
+        return (
+          <AppContext.Provider value={{
+            user,
+            users,
+            currentView,
+            setCurrentView,
+            login,
+            logout,
+            addUser
+          }}>
+            {children}
+          </AppContext.Provider>
+        );
+      };
+
+      const useApp = () => {
+        const context = useContext(AppContext);
+        if (!context) {
+          throw new Error('useApp must be used within an AppProvider');
+        }
+        return context;
+      };
+
+      const HomePage = () => {
+        const { setCurrentView } = useApp();
+
+        return (
+          <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center p-6">
+            <div className="text-center max-w-4xl">
+              <div className="mb-8">
+                <h1 className="text-6xl font-bold text-white mb-4">ExpenMan</h1>
+                <p className="text-xl text-white/90 mb-8">Smart Expense Management System</p>
+                <p className="text-lg text-white/80 max-w-2xl mx-auto mb-12">
+                  Streamline your expense reporting, approval workflows, and financial tracking with our comprehensive management platform.
+                </p>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+                <div className="bg-white/10 backdrop-blur-sm p-6 rounded-2xl border border-white/20">
+                  <div className="text-4xl mb-4">📊</div>
+                  <h3 className="text-xl font-semibold text-white mb-2">Smart Analytics</h3>
+                  <p className="text-white/80">Real-time insights and reporting</p>
+                </div>
+                <div className="bg-white/10 backdrop-blur-sm p-6 rounded-2xl border border-white/20">
+                  <div className="text-4xl mb-4">⚡</div>
+                  <h3 className="text-xl font-semibold text-white mb-2">Fast Approvals</h3>
+                  <p className="text-white/80">Streamlined approval workflows</p>
+                </div>
+                <div className="bg-white/10 backdrop-blur-sm p-6 rounded-2xl border border-white/20">
+                  <div className="text-4xl mb-4">🔒</div>
+                  <h3 className="text-xl font-semibold text-white mb-2">Secure & Compliant</h3>
+                  <p className="text-white/80">Enterprise-grade security</p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setCurrentView('login')}
+                className="bg-white text-purple-600 px-8 py-4 rounded-2xl font-semibold text-lg hover:bg-white/90 transition-colors shadow-2xl"
+              >
+                Get Started →
+              </button>
+            </div>
+          </div>
+        );
+      };
+
+      const LoginPage = () => {
+        const [email, setEmail] = useState('');
+        const [password, setPassword] = useState('');
+        const [loginRole, setLoginRole] = useState('employee');
+        const { login, setCurrentView } = useApp();
+
+        const handleLogin = (e) => {
+          e.preventDefault();
+          login(email, password, loginRole);
+        };
+
+        return (
+          <div className="min-h-screen bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center p-6">
+            <div className="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl">
+              <div className="text-center mb-8">
+                <button
+                  onClick={() => setCurrentView('home')}
+                  className="text-sm text-blue-600 hover:text-blue-800 mb-4 flex items-center gap-1"
+                >
+                  ← Back to Home
+                </button>
+                <h1 className="text-3xl font-bold text-gray-800 mb-2">ExpenMan</h1>
+                <p className="text-gray-600">Expense Management System</p>
+              </div>
+
+              <form onSubmit={handleLogin} className="space-y-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Select Role</label>
+                  <select
+                    value={loginRole}
+                    onChange={(e) => setLoginRole(e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="employee">👤 Employee</option>
+                    <option value="manager">👨💼 Manager</option>
+                    <option value="cfo">👑 CFO</option>
+                    <option value="admin">🔑 Admin</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="Enter your email"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="Enter your password"
+                    required
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                >
+                  Sign In as {loginRole.charAt(0).toUpperCase() + loginRole.slice(1)}
+                </button>
+              </form>
+            </div>
+          </div>
+        );
+      };
+
+      const AdminDashboard = () => {
+        const { user, users, logout, addUser } = useApp();
+        const [showAddUserForm, setShowAddUserForm] = useState(false);
+        const [userForm, setUserForm] = useState({
+          name: '',
+          email: '',
+          role: 'employee'
+        });
+        const [newUserCredentials, setNewUserCredentials] = useState(null);
+
+        const handleAddUser = (e) => {
+          e.preventDefault();
+          const newUser = addUser(userForm);
+          setNewUserCredentials(newUser);
+          setUserForm({ name: '', email: '', role: 'employee' });
+        };
+        
+        return (
+          <div className="min-h-screen bg-gray-50">
+            <header className="bg-white border-b border-gray-200 px-6 py-4">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-4">
+                  <h1 className="text-xl font-semibold text-gray-900">ExpenMan</h1>
+                  <span className="px-3 py-1 bg-purple-100 text-purple-800 text-sm font-medium rounded-full">
+                    Admin Portal
+                  </span>
+                </div>
+                <div className="flex items-center gap-4">
+                  <span className="text-sm text-gray-600">Welcome, {user?.name}</span>
+                  <button onClick={logout} className="px-4 py-2 text-gray-600 hover:text-gray-900 rounded-lg hover:bg-gray-100">
+                    Logout
+                  </button>
+                </div>
+              </div>
+            </header>
+
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <div className="bg-white p-6 rounded-2xl border border-gray-200">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                      <span className="text-blue-600">👥</span>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Total Users</p>
+                      <p className="text-2xl font-bold text-gray-900">12</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-white p-6 rounded-2xl border border-gray-200">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                      <span className="text-green-600">💰</span>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Total Expenses</p>
+                      <p className="text-2xl font-bold text-gray-900">$15,420</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-white p-6 rounded-2xl border border-gray-200">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
+                      <span className="text-yellow-600">⏳</span>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Pending</p>
+                      <p className="text-2xl font-bold text-gray-900">8</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-white p-6 rounded-2xl border border-gray-200">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                      <span className="text-purple-600">✅</span>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Approved</p>
+                      <p className="text-2xl font-bold text-gray-900">24</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-900">User Management</h2>
+                <button
+                  onClick={() => setShowAddUserForm(true)}
+                  className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center gap-2"
+                >
+                  <span>➕</span>
+                  Add User
+                </button>
+              </div>
+
+              <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+                <div className="px-6 py-4 border-b border-gray-200">
+                  <h3 className="text-lg font-semibold text-gray-900">All Users</h3>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">Name</th>
+                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">Email</th>
+                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">Role</th>
+                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">Password</th>
+                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {users.length === 0 ? (
+                        <tr>
+                          <td colSpan="5" className="px-6 py-12 text-center text-gray-500">
+                            <div className="text-4xl mb-4">👥</div>
+                            <p>No users created yet. Click "Add User" to get started.</p>
+                          </td>
+                        </tr>
+                      ) : (
+                        users.map((user) => (
+                          <tr key={user.id} className="hover:bg-gray-50">
+                            <td className="px-6 py-4 text-sm font-medium text-gray-900">{user.name}</td>
+                            <td className="px-6 py-4 text-sm text-gray-600">{user.email}</td>
+                            <td className="px-6 py-4">
+                              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                                user.role === 'admin' ? 'bg-purple-100 text-purple-800' :
+                                user.role === 'manager' ? 'bg-blue-100 text-blue-800' :
+                                'bg-green-100 text-green-800'
+                              }`}>
+                                {user.role === 'admin' ? '👑' : user.role === 'manager' ? '👨💼' : '👤'} {user.role}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded">
+                                {user.password}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                ✅ Active
+                              </span>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Add User Modal */}
+              {showAddUserForm && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+                  <div className="bg-white rounded-2xl p-6 max-w-md w-full">
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-lg font-semibold">Add New User</h3>
+                      <button onClick={() => setShowAddUserForm(false)} className="text-gray-400 hover:text-gray-600">
+                        ❌
+                      </button>
+                    </div>
+                    
+                    {newUserCredentials ? (
+                      <div className="text-center space-y-4">
+                        <div className="text-4xl mb-4">🎉</div>
+                        <h4 className="text-lg font-semibold text-green-800">User Created!</h4>
+                        <div className="bg-green-50 p-4 rounded-lg space-y-2 text-left">
+                          <div><strong>Name:</strong> {newUserCredentials.name}</div>
+                          <div><strong>Email:</strong> {newUserCredentials.email}</div>
+                          <div><strong>Password:</strong> <span className="font-mono bg-yellow-100 px-2 py-1 rounded">{newUserCredentials.password}</span></div>
+                          <div><strong>Role:</strong> {newUserCredentials.role}</div>
+                        </div>
+                        <button
+                          onClick={() => {
+                            setShowAddUserForm(false);
+                            setNewUserCredentials(null);
+                          }}
+                          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                        >
+                          Close
+                        </button>
+                      </div>
+                    ) : (
+                      <form onSubmit={handleAddUser} className="space-y-4">
+                        <input
+                          type="text"
+                          placeholder="Full Name"
+                          value={userForm.name}
+                          onChange={(e) => setUserForm({ ...userForm, name: e.target.value })}
+                          className="w-full p-3 border border-gray-200 rounded-lg"
+                          required
+                        />
+                        <input
+                          type="email"
+                          placeholder="Email Address"
+                          value={userForm.email}
+                          onChange={(e) => setUserForm({ ...userForm, email: e.target.value })}
+                          className="w-full p-3 border border-gray-200 rounded-lg"
+                          required
+                        />
+                        <select
+                          value={userForm.role}
+                          onChange={(e) => setUserForm({ ...userForm, role: e.target.value })}
+                          className="w-full p-3 border border-gray-200 rounded-lg"
+                        >
+                          <option value="employee">👤 Employee</option>
+                          <option value="manager">👨💼 Manager</option>
+                          <option value="cfo">👑 CFO</option>
+                        </select>
+                        <div className="flex gap-3">
+                          <button type="button" onClick={() => setShowAddUserForm(false)} className="flex-1 py-2 border border-gray-200 rounded-lg">
+                            Cancel
+                          </button>
+                          <button type="submit" className="flex-1 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                            Create User
+                          </button>
+                        </div>
+                      </form>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      };
+
+      const ManagerDashboard = () => {
+        const { user, logout } = useApp();
+        
+        return (
+          <div className="min-h-screen bg-gray-50">
+            <header className="bg-white border-b border-gray-200 px-6 py-4">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-4">
+                  <h1 className="text-xl font-semibold text-gray-900">ExpenMan</h1>
+                  <span className="px-3 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-full">
+                    Manager Portal
+                  </span>
+                </div>
+                <div className="flex items-center gap-4">
+                  <span className="text-sm text-gray-600">Welcome, {user?.name}</span>
+                  <button onClick={logout} className="px-4 py-2 text-gray-600 hover:text-gray-900 rounded-lg hover:bg-gray-100">
+                    Logout
+                  </button>
+                </div>
+              </div>
+            </header>
+
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <div className="bg-white p-6 rounded-2xl border border-gray-200">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
+                      <span className="text-yellow-600">⏳</span>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Pending Approvals</p>
+                      <p className="text-2xl font-bold text-gray-900">5</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-white p-6 rounded-2xl border border-gray-200">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                      <span className="text-green-600">✅</span>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Approved</p>
+                      <p className="text-2xl font-bold text-gray-900">12</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-white p-6 rounded-2xl border border-gray-200">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                      <span className="text-blue-600">👥</span>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Team Members</p>
+                      <p className="text-2xl font-bold text-gray-900">8</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-white p-6 rounded-2xl border border-gray-200">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                      <span className="text-purple-600">📊</span>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Approval Rate</p>
+                      <p className="text-2xl font-bold text-gray-900">94%</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-2xl border border-gray-200 p-6">
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">Manager Dashboard</h2>
+                <div className="text-center py-12">
+                  <div className="text-4xl mb-4">👨💼</div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Manager Portal</h3>
+                  <p className="text-gray-500">Review and approve team expenses</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      };
+
+      const EmployeeDashboard = () => {
+        const { user, logout } = useApp();
+        const [showExpenseForm, setShowExpenseForm] = useState(false);
+        
+        return (
+          <div className="min-h-screen bg-gray-50">
+            <header className="bg-white border-b border-gray-200 px-6 py-4">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-4">
+                  <h1 className="text-xl font-semibold text-gray-900">ExpenMan</h1>
+                  <span className="px-3 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-full">
+                    Employee Portal
+                  </span>
+                </div>
+                <div className="flex items-center gap-4">
+                  <span className="text-sm text-gray-600">Welcome, {user?.name}</span>
+                  <button onClick={logout} className="px-4 py-2 text-gray-600 hover:text-gray-900 rounded-lg hover:bg-gray-100">
+                    Logout
+                  </button>
+                </div>
+              </div>
+            </header>
+
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div className="bg-white p-6 rounded-2xl border border-gray-200">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
+                      <span className="text-yellow-600">⏳</span>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Pending</p>
+                      <p className="text-2xl font-bold text-gray-900">3</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-white p-6 rounded-2xl border border-gray-200">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                      <span className="text-green-600">✅</span>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Approved</p>
+                      <p className="text-2xl font-bold text-gray-900">8</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-white p-6 rounded-2xl border border-gray-200">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                      <span className="text-red-600">❌</span>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Rejected</p>
+                      <p className="text-2xl font-bold text-gray-900">1</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-4 mb-8">
+                <button
+                  onClick={() => setShowExpenseForm(true)}
+                  className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition-colors font-medium"
+                >
+                  <span>➕</span>
+                  New Expense
+                </button>
+                <button className="flex items-center gap-2 px-6 py-3 bg-white text-gray-700 border border-gray-200 rounded-2xl hover:bg-gray-50 transition-colors font-medium">
+                  <span>📁</span>
+                  My Expenses
+                </button>
+              </div>
+
+              <div className="bg-white rounded-2xl border border-gray-200">
+                <div className="px-6 py-4 border-b border-gray-200">
+                  <h3 className="text-lg font-semibold text-gray-900">Recent Expenses</h3>
+                </div>
+                <div className="p-6">
+                  <div className="text-center py-12">
+                    <div className="text-4xl mb-4">📋</div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No expenses yet</h3>
+                    <p className="text-gray-500 mb-4">Click "New Expense" to submit your first expense report</p>
+                    <button
+                      onClick={() => setShowExpenseForm(true)}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      Get Started
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {showExpenseForm && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+                  <div className="bg-white rounded-2xl p-6 max-w-md w-full">
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-lg font-semibold">New Expense</h3>
+                      <button onClick={() => setShowExpenseForm(false)} className="text-gray-400 hover:text-gray-600">
+                        ❌
+                      </button>
+                    </div>
+                    <div className="space-y-4">
+                      <input type="number" placeholder="Amount" className="w-full p-3 border border-gray-200 rounded-lg" />
+                      <input type="date" className="w-full p-3 border border-gray-200 rounded-lg" />
+                      <textarea placeholder="Description" className="w-full p-3 border border-gray-200 rounded-lg" rows="3"></textarea>
+                      <select className="w-full p-3 border border-gray-200 rounded-lg">
+                        <option>Select Category</option>
+                        <option>Travel</option>
+                        <option>Meals</option>
+                        <option>Office Supplies</option>
+                      </select>
+                      <div className="flex gap-3">
+                        <button onClick={() => setShowExpenseForm(false)} className="flex-1 py-2 border border-gray-200 rounded-lg">
+                          Cancel
+                        </button>
+                        <button className="flex-1 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                          Submit
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      };
+
+      const App = () => {
+        const { user, currentView } = useApp();
+
+        const renderDashboard = () => {
+          if (!user) return <LoginPage />;
+          
+          switch (user.role) {
+            case 'admin':
+              return <AdminDashboard />;
+            case 'manager':
+            case 'cfo':
+              return <ManagerDashboard />;
+            case 'employee':
+              return <EmployeeDashboard />;
+            default:
+              return <LoginPage />;
+          }
+        };
+
+        if (currentView === 'home') return <HomePage />;
+        if (currentView === 'login') return <LoginPage />;
+        return renderDashboard();
+      };
+
+      const root = ReactDOM.createRoot(document.getElementById('root'));
+      root.render(
+        <AppProvider>
+          <App />
+        </AppProvider>
+      );
+    </script>
+  </body>
+</html>
